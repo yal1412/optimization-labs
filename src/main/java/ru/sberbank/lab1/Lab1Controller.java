@@ -2,7 +2,6 @@ package ru.sberbank.lab1;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,19 +29,14 @@ public class Lab1Controller {
     private static final String URL = "http://export.rbc.ru/free/selt.0/free.fcgi?period=DAILY&tickers=USD000000TOD&separator=TAB&data_format=BROWSER";
 
     Long oneDayInSec = 24 * 60 * 60L;
-    Long currentDayInSec;
-    Long curDateSec;
 
-    String obligatoryForecastStartInLA = "https://api.darksky.net/forecast/7ba6164198e89cb2e6b2454d90e7b41d/34.053044,-118.243750,";
-//    String LAcoordinates = "34.053044,-118.243750,";
+    String obligatoryForecastStartInLA = "https://api.darksky.net/forecast/7680422f32effb534f62f1283f0c38be/34.053044,-118.243750,";
     String exclude = "?exclude=daily";
 
-    String fooResourceUrl;
     String info;
     Long date;
     Double temp;
-    JSONArray data;
-    String hourly;
+    int days;
 
     RestTemplate restTemplate = new RestTemplate();
 
@@ -131,7 +125,9 @@ public class Lab1Controller {
     @GetMapping("/weather")
     public List<Double> getWeatherForPeriod(Integer days) {
         try {
-            return getTemperatureForLastDays(days);
+            this.days = days;
+            getTemperatureForLastDays();
+            return temps;
         } catch (JSONException e) {
         }
 
@@ -139,7 +135,10 @@ public class Lab1Controller {
     }
 
     // Заменено умножение на сложение, функции заинлайнены, вынесено создание переменных
-    public List<Double> getTemperatureForLastDays(int days) throws JSONException {
+    // Убраны лишние переменные, oneDayInSec создается и вычисляется один раз
+    // Сократила цикл на одну итерацию (на маленьких значениях будет иметь значение)
+    // Убрана передача аргумента функции
+    public void getTemperatureForLastDays() throws JSONException {
         if (!temps.isEmpty()) {
             temps.clear();
         }
@@ -157,30 +156,14 @@ public class Lab1Controller {
             temps.add(temp);
         }
 
-        return temps;
     }
 
-    //
-//    public void getTodayWeather() {
-//        fooResourceUrl = obligatoryForecastStartInLA + date + exclude;
-//        System.out.println(fooResourceUrl);
-//        info = restTemplate.getForEntity(fooResourceUrl, String.class).getBody();
-//        System.out.println(info);
-//    }
-
+    // инлайн функций; объекты вынесены в поля класса, чтобы не создавались каждый раз
+    // строки заранее объединены, убран параметр из вызова функции
+    // убраны функции, чтобы не было лишних вызовов
     public void getTemperatureFromInfo() throws JSONException {
-
         info = restTemplate.getForEntity(obligatoryForecastStartInLA + date.toString() + exclude, String.class).getBody();
-
-//        hourly = new JSONObject(info).getString("hourly");
-//        data = new JSONObject(new JSONObject(info).getString("hourly")).getJSONArray("data");
         temp = new JSONObject(new JSONObject(new JSONObject(info).getString("hourly")).getJSONArray("data").get(0).toString()).getDouble("temperature");
     }
-
-//    public void getTemperature() throws JSONException {
-//        hourly = new JSONObject(info).getString("hourly");
-//        data = new JSONObject(hourly).getJSONArray("data");
-//        temp = new JSONObject(data.get(0).toString()).getDouble("temperature");
-//    }
 }
 
